@@ -5,6 +5,7 @@ const app = express();
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
 const loginSchema = require('./src/models/login');
+const fotosSchema = require('./src/models/fotos');
 require ('dotenv').config();
 const port = process.env.PORT || 5000;
 
@@ -39,26 +40,58 @@ app.post('/register', (req, res) =>{
   })
 });
 
-app.post('/authenticate', (req, res) => {
-  const {username, password} = req.body;
-  loginSchema.findOne({username}, (err, user)=>{
-    if(err){
-      res.status(500).send('ERROR AL AUTENTICAR AL USUARIO');
-    }else if(!user){
-      res.status(500).send('EL USUARIO NO EXISTE');
-    }else{
-      loginSchema.isCorrectPassword(password, (err, result)=>{
-        if(err){
-          res.status(500).send('ERROR AL AUTENTICAR')
-        }else if(result){
-          res.status(200).send('USUARIO AUTENTICADO CORRECTAMENTE');
-        }else{
-          res.status(500).send('USUARIO Y/O CONTRASEÑA INCORRECTA')
-        }
-      });
-    }
+app.post('/authenticate',  (req, res) => {
+  
+  const {usuario, password} = req.body;
+  loginSchema.findOne({usuario}).then((user)=>{
+    console.log(user);
+      if(user){
+        bcrypt.compare(password, user.password, (err, result) =>{
+          if(result){
+            res.send({
+              status: 200,
+              resultado: {
+                user,
+                auth: result,
+                mensaje: 'datos correctos',
+              },
+              // result,
+            });
+          }else{
+            res.status(301).send('USUARIO O CONTRASEÑA INCORRECTA')
+          }
+        })
+        
+      }else{
+        res.status(301).send('USUARIO NO REGISTRADO')
+      }
+  }).catch((err)=>{
+      res.status(500).send(`ERROR: ${err}`)
+  });
+});
+
+app.get('/fotos', (req, res)=>{
+  fotosSchema.find()
+  .then((data)=>{
+    res.status(200).send({
+      datos:cambiarDatos(data),
+    })
+  })
+  .catch((err)=>{
+    res.status(101).send(err);
   })
 });
+
+const cambiarDatos = (datos) => {
+  let datos1 = [];
+  datos.map((dato)=>(
+    datos1.push({
+      label: dato._id,
+      value: dato.fotos.url,
+    })
+  ));
+  return datos1;
+};
 
 app.listen(port, ()=>console.log(`servidor escuchando en el puerto ${port}`));
 
