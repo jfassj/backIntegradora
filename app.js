@@ -93,6 +93,27 @@ const cambiarDatos = (datos) => {
   return datos1;
 };
 
+app.delete('/delete', (req, res)=>{
+  const {url} = req.body;
+  fotosSchema.deleteOne({url:url})
+  .then(()=>{
+    res.send({
+      status:200,
+      resultado: {
+        mensaje: 'datos elimminados',
+      }
+    })
+  })
+  .catch((err)=>{
+    res.send({
+      status: 301,
+      resultado: {
+        mensaje: `problemas con el servidor: ${err}`
+      }
+    })
+  })
+})
+
 app.listen(port, ()=>console.log(`servidor escuchando en el puerto ${port}`));
 
 module.exports = app;
